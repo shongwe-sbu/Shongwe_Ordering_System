@@ -1,2 +1,3 @@
 # Shongwe_Ordering_System
-WTC-LUS8YWD7
+Cyber Security Verification Code: WTC-LUS8YWD7
+Cloud Computing Verification Code: WTC-STGLUT43
