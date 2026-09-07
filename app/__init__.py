@@ -1,0 +1,1 @@
+"""Shongwe ordering system package."""
