@@ -41,7 +41,7 @@ def main():
         if user["role"] == EMPLOYEE_ROLE:
             print("Employee dashboard: \nMenu Items \nManage Orders \nView Queue")
         else:
-            print("Admin dashboard: view reports, staff, customers, and sales.")
+            print("Admin dashboard: \nView Reports \nManage Staff \nManage Customers \nView Sales")
 
         print("You are now signed in.")
 
