@@ -37,7 +37,7 @@ Customers do not log in to the system. Their details are recorded by an employee
 - Add, edit, disable, and remove menu items.
 - View customer details and customer order history.
 - View active, completed and cancelled orders.
-- Update order statuses, such as `Pending`, `Confirmed`, `Preparing`, `Ready` and `Completed`.
+- Update order statuses, such as `Preparing`, `Ready`, `Collected` and `Cancelled`.
 - Review sales totals, popular menu items and revenue over selected dates.
 - Export sales data for further analysis.
 
