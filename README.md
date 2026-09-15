@@ -4,9 +4,9 @@ The Shongwe Restaurant Ordering System is a Python console application for manag
 
 ## Combined Project Scope
 
-This is one combined project that covers both the **Cyber Security** and **Cloud Computing** requirements. The restaurant ordering system will demonstrate how security controls protect users, administrators, accounts and order information, while cloud technologies provide reliable storage, access, backups and reporting for the application.
+This is one combined project that covers both the **CyberSecurity** and **Cloud Computing** requirements. The restaurant ordering system will demonstrate how security controls protect users, administrators, accounts and order information, while cloud technologies provide reliable storage, access, backups and reporting for the application.
 
-The Cyber Security focus includes authentication, role-based access control, secure password storage, input validation, protected administrator functions, secure handling of customer information and prevention of unauthorized access. The Cloud Computing focus includes using AWS Free Tier services, storing orders and customer details in a managed cloud database, enabling backups where available and making sales information available to authorized administrators.
+The CyberSecurity focus includes authentication, role-based access control, secure password storage, input validation, protected administrator functions, secure handling of customer information and prevention of unauthorized access. The Cloud Computing focus includes using AWS Free Tier services, storing orders and customer details in a managed cloud database, enabling backups where available and making sales information available to authorized administrators.
 
 ## Project Goals
 
@@ -32,12 +32,11 @@ Customers do not log in to the system. Their details are recorded by an employee
 
 ### Administrator Side
 
-- Sign in through a protected manager or administrator area.
+- Sign in through a protected administrator.
 - Create and manage employee accounts and permissions.
 - Add, edit, disable, and remove menu items.
 - View customer details and customer order history.
 - View active, completed and cancelled orders.
-- Update order statuses, such as `Preparing`, `Ready`, `Collected` and `Cancelled`.
 - Review sales totals, popular menu items and revenue over selected dates.
 - Export sales data for further analysis.
 
@@ -119,5 +118,5 @@ Order item prices will be stored when an order is placed. This ensures that hist
 
 ## Project Verification Codes
 
-- Cyber Security Verification Code: `WTC-LUS8YWD7`
+- CyberSecurity Verification Code: `WTC-LUS8YWD7`
 - Cloud Computing Verification Code: `WTC-STGLUT43`

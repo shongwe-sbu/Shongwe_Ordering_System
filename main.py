@@ -1,10 +1,10 @@
-from app.auth import ADMIN_ROLE, EMPLOYEE_ROLE, authenticate, register_user
-from app.menu import add_menu_item, list_menu_items
+from app.auth import ADMIN_ROLE, EMPLOYEE_ROLE, authenticate, delete_user, disable_user, list_users, register_user
+from app.menu import add_menu_item, delete_menu_item, disable_menu_item, edit_menu_item, list_menu_items
 from app.orders import create_order, list_orders, update_order_status
 
 
 def show_menu():
-    items = list_menu_items()
+    items = list_menu_items(available_only=True)
     if not items:
         print("No menu items available yet.")
         return
@@ -125,6 +125,144 @@ def update_order_status_from_console():
         print(f"Order #{updated['order_id']} status updated to '{updated['status']}'.")
 
 
+def admin_manage_staff():
+    while True:
+        print("\nStaff management:")
+        print("1. View all staff")
+        print("2. Create employee account")
+        print("3. Disable employee account")
+        print("4. Delete employee account")
+        print("5. Back")
+        action = input("Choose an action: ").strip()
+
+        if action == "1":
+            staff = list_users()
+            if not staff:
+                print("No staff accounts found.")
+            else:
+                print("\nStaff accounts:")
+                for u in staff:
+                    status = "active" if u["active"] == "true" else "disabled"
+                    print(f"  {u['username']} | {u['role']} | {status}")
+
+        elif action == "2":
+            username = input("New username: ").strip()
+            password = input("Password: ").strip()
+            try:
+                register_user(username, password, EMPLOYEE_ROLE)
+                print(f"Employee '{username}' created.")
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        elif action == "3":
+            username = input("Username to disable: ").strip()
+            try:
+                disable_user(username)
+                print(f"'{username}' has been disabled.")
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        elif action == "4":
+            username = input("Username to delete: ").strip()
+            try:
+                delete_user(username)
+                print(f"'{username}' has been deleted.")
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        elif action == "5":
+            break
+        else:
+            print("Invalid action.")
+
+
+def admin_manage_menu():
+    while True:
+        print("\nMenu management:")
+        print("1. View all menu items")
+        print("2. Add menu item")
+        print("3. Edit menu item")
+        print("4. Disable menu item")
+        print("5. Delete menu item")
+        print("6. Back")
+        action = input("Choose an action: ").strip()
+
+        if action == "1":
+            items = list_menu_items()
+            if not items:
+                print("No menu items found.")
+            else:
+                print("\nAll menu items:")
+                for item in items:
+                    status = "available" if item["available"] else "disabled"
+                    print(f"  {item['name']} | R{item['price']:.2f} | {item['category']} | {status}")
+
+        elif action == "2":
+            name = input("Item name: ").strip()
+            category = input("Category: ").strip()
+            try:
+                price = float(input("Price: ").strip())
+                add_menu_item(name, price, category)
+                print(f"'{name}' added to menu.")
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        elif action == "3":
+            name = input("Item name to edit: ").strip()
+            price_input = input("New price (leave blank to keep): ").strip()
+            category_input = input("New category (leave blank to keep): ").strip()
+            try:
+                price = float(price_input) if price_input else None
+                category = category_input if category_input else None
+                edit_menu_item(name, price, category)
+                print(f"'{name}' updated.")
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        elif action == "4":
+            name = input("Item name to disable: ").strip()
+            try:
+                disable_menu_item(name)
+                print(f"'{name}' disabled.")
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        elif action == "5":
+            name = input("Item name to delete: ").strip()
+            try:
+                delete_menu_item(name)
+                print(f"'{name}' deleted.")
+            except ValueError as e:
+                print(f"Error: {e}")
+
+        elif action == "6":
+            break
+        else:
+            print("Invalid action.")
+
+
+def admin_dashboard():
+    while True:
+        print("\nAdmin actions:")
+        print("1. Manage staff")
+        print("2. Manage menu")
+        print("3. View all orders")
+        print("4. Logout")
+        action = input("Choose an action: ").strip()
+
+        if action == "1":
+            admin_manage_staff()
+        elif action == "2":
+            admin_manage_menu()
+        elif action == "3":
+            show_orders()
+        elif action == "4":
+            print("Logged out.")
+            break
+        else:
+            print("Invalid action.")
+
+
 def seed_data():
     register_user("admin1", "admin123", ADMIN_ROLE)
     register_user("emp1", "emp123", EMPLOYEE_ROLE)
@@ -193,10 +331,7 @@ def main():
                 else:
                     print("Invalid action.")
         else:
-            print("Admin dashboard: view reports, staff, customers, and sales.")
-            show_menu()
-
-        print("You are now signed in.")
+            admin_dashboard()
 
 
 if __name__ == "__main__":
