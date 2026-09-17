@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import bcrypt
 from typing import Dict, List, Optional
 
 
@@ -19,7 +20,8 @@ def register_user(username: str, password: str, role: str) -> Dict[str, str]:
     if role not in {EMPLOYEE_ROLE, ADMIN_ROLE}:
         raise ValueError("Invalid user role.")
 
-    user = {"username": username, "password": password, "role": role, "active": "true"}
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    user = {"username": username, "password": hashed, "role": role, "active": "true"}
     users[username] = user
     return user
 
@@ -28,7 +30,7 @@ def authenticate(
     username: str, password: str, role: Optional[str] = None
 ) -> Optional[Dict[str, str]]:
     user = users.get(username)
-    if user is None or user["password"] != password:
+    if user is None or not bcrypt.checkpw(password.encode(), user["password"].encode()):
         return None
     if user["active"] != "true":
         return None
