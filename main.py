@@ -2,7 +2,7 @@ from getpass import getpass
 
 from app.auth import ADMIN_ROLE, EMPLOYEE_ROLE, authenticate, delete_user, disable_user, list_users, register_user
 from app.menu import add_menu_item, delete_menu_item, disable_menu_item, edit_menu_item, list_menu_items
-from app.orders import VALID_STATUSES, create_order, list_orders, update_order_status
+from app.orders import VALID_STATUSES, create_order, list_orders, sales_report, update_order_status
 from app.db import reset_connection
 
 
@@ -246,13 +246,34 @@ def admin_manage_menu():
             print("Invalid action.")
 
 
+def admin_sales_report():
+    print("\nSales Report")
+    from_date = input("From date (YYYY-MM-DD): ").strip()
+    to_date = input("To date (YYYY-MM-DD): ").strip()
+    try:
+        report = sales_report(from_date, to_date)
+    except Exception as e:
+        print(f"Error: {e}")
+        return
+    print(f"\nPeriod:      {report['from_date']} to {report['to_date']}")
+    print(f"Orders:      {report['order_count']}")
+    print(f"Revenue:     R{report['revenue']:.2f}")
+    if report["top_items"]:
+        print("Top items:")
+        for item in report["top_items"]:
+            print(f"  {item['name']} — {item['quantity']} sold")
+    else:
+        print("Top items:   No data")
+
+
 def admin_dashboard():
     while True:
         print("\nAdmin actions:")
         print("1. Manage staff")
         print("2. Manage menu")
         print("3. View all orders")
-        print("4. Logout")
+        print("4. Sales report")
+        print("5. Logout")
         action = input("Choose an action: ").strip()
 
         if action == "1":
@@ -262,6 +283,8 @@ def admin_dashboard():
         elif action == "3":
             show_orders()
         elif action == "4":
+            admin_sales_report()
+        elif action == "5":
             print("Logged out.")
             break
         else:

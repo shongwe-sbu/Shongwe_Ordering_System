@@ -35,8 +35,12 @@ def create_order(customer_name: str, order_type: str, items: List[Dict[str, obje
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO orders (customer_name, order_type, total) VALUES (%s, %s, %s)",
-        (customer, order_type, total),
+        "SELECT COALESCE(MAX(daily_number), 0) + 1 FROM orders WHERE DATE(created_at) = CURDATE()"
+    )
+    daily_number = cursor.fetchone()[0]
+    cursor.execute(
+        "INSERT INTO orders (customer_name, order_type, total, daily_number) VALUES (%s, %s, %s, %s)",
+        (customer, order_type, total, daily_number),
     )
     order_id = cursor.lastrowid
     for item in order_items:
@@ -46,7 +50,7 @@ def create_order(customer_name: str, order_type: str, items: List[Dict[str, obje
         )
     conn.commit()
     return {
-        "order_id": order_id,
+        "order_id": daily_number,
         "customer_name": customer,
         "order_type": order_type,
         "items": order_items,
@@ -62,7 +66,7 @@ def list_orders() -> List[Dict[str, object]]:
     orders = cursor.fetchall()
     for order in orders:
         cursor.execute("SELECT * FROM order_items WHERE order_id = %s", (order["id"],))
-        order["order_id"] = order["id"]
+        order["order_id"] = order["daily_number"]
         order["items"] = cursor.fetchall()
     return orders
 
@@ -72,15 +76,55 @@ def update_order_status(order_id: int, new_status: str) -> Optional[Dict[str, ob
         raise ValueError("Invalid order status.")
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE orders SET status = %s WHERE id = %s", (new_status, order_id))
+    cursor.execute(
+        "UPDATE orders SET status = %s WHERE daily_number = %s AND DATE(created_at) = CURDATE()",
+        (new_status, order_id),
+    )
     if cursor.rowcount == 0:
         return None
     conn.commit()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM orders WHERE id = %s", (order_id,))
+    cursor.execute(
+        "SELECT * FROM orders WHERE daily_number = %s AND DATE(created_at) = CURDATE()",
+        (order_id,),
+    )
     order = cursor.fetchone()
-    order["order_id"] = order["id"]
+    order["order_id"] = order["daily_number"]
     return order
+
+
+def sales_report(from_date: str, to_date: str) -> Dict[str, object]:
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS order_count, COALESCE(SUM(total), 0) AS revenue
+        FROM orders
+        WHERE status = 'collected' AND DATE(created_at) BETWEEN %s AND %s
+        """,
+        (from_date, to_date),
+    )
+    summary = cursor.fetchone()
+    cursor.execute(
+        """
+        SELECT oi.item_name, SUM(oi.quantity) AS total_qty
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.status = 'collected' AND DATE(o.created_at) BETWEEN %s AND %s
+        GROUP BY oi.item_name
+        ORDER BY total_qty DESC
+        LIMIT 5
+        """,
+        (from_date, to_date),
+    )
+    top_items = cursor.fetchall()
+    return {
+        "from_date": from_date,
+        "to_date": to_date,
+        "order_count": summary["order_count"],
+        "revenue": float(summary["revenue"]),
+        "top_items": [{ "name": r["item_name"], "quantity": r["total_qty"]} for r in top_items],
+    }
 
 
 def clear_orders() -> None:

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS orders (
     order_type ENUM('dine-in', 'takeaway') NOT NULL,
     total DECIMAL(10, 2) NOT NULL,
     status ENUM('preparing', 'ready', 'collected', 'cancelled') NOT NULL DEFAULT 'preparing',
+    daily_number INT NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

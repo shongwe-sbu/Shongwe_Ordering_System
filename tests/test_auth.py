@@ -1,4 +1,7 @@
+import os
 import unittest
+
+os.environ["TEST_MODE"] = "1"
 
 from app.auth import ADMIN_ROLE, EMPLOYEE_ROLE, authenticate, clear_users, register_user
 

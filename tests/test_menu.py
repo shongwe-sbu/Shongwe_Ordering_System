@@ -1,4 +1,7 @@
+import os
 import unittest
+
+os.environ["TEST_MODE"] = "1"
 
 from app.menu import add_menu_item, clear_menu, get_menu_item, list_menu_items
 
