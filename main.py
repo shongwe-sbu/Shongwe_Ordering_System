@@ -1,6 +1,13 @@
+from getpass import getpass
+
 from app.auth import ADMIN_ROLE, EMPLOYEE_ROLE, authenticate, delete_user, disable_user, list_users, register_user
 from app.menu import add_menu_item, delete_menu_item, disable_menu_item, edit_menu_item, list_menu_items
-from app.orders import create_order, list_orders, update_order_status
+from app.orders import VALID_STATUSES, create_order, list_orders, update_order_status
+from app.db import reset_connection
+
+
+def _read_password(prompt="Password: ") -> str:
+    return getpass(prompt)
 
 
 def show_menu():
@@ -70,9 +77,6 @@ def create_order_from_console():
         print(f"#{queued_order['order_id']} - {queued_order['customer_name']} - {queued_order['status']} - R{queued_order['total']:.2f}")
 
 
-VALID_STATUSES = ["preparing", "ready", "collected", "cancelled"]
-
-
 def show_orders():
     all_orders = list_orders()
     if not all_orders:
@@ -82,7 +86,7 @@ def show_orders():
     for order in all_orders:
         print(f"#{order['order_id']} | {order['customer_name']} | {order['order_type']} | {order['status']} | R{order['total']:.2f}")
         for item in order["items"]:
-            print(f"   - {item['quantity']}x {item['name']} @ R{item['price']:.2f}")
+            print(f"   - {item['quantity']}x {item['item_name']} @ R{item['price']:.2f}")
 
 
 def update_order_status_from_console():
@@ -147,7 +151,8 @@ def admin_manage_staff():
 
         elif action == "2":
             username = input("New username: ").strip()
-            password = input("Password: ").strip()
+            password = _read_password("Password: ")
+            reset_connection()
             try:
                 register_user(username, password, EMPLOYEE_ROLE)
                 print(f"Employee '{username}' created.")
@@ -264,14 +269,21 @@ def admin_dashboard():
 
 
 def seed_data():
-    register_user("admin1", "admin123", ADMIN_ROLE)
-    register_user("emp1", "emp123", EMPLOYEE_ROLE)
-    add_menu_item("Burger", 35.0, "Main")
-    add_menu_item("Fries", 18.50, "Side")
-    add_menu_item("Coke", 12.00, "Drink")
+    for username, password, role in [("admin1", "admin123", ADMIN_ROLE), ("emp1", "emp123", EMPLOYEE_ROLE)]:
+        try:
+            register_user(username, password, role)
+        except ValueError:
+            pass
+    for name, price, category in [("Burger", 35.0, "Main"), ("Fries", 18.50, "Side"), ("Coke", 12.00, "Drink")]:
+        try:
+            add_menu_item(name, price, category)
+        except ValueError:
+            pass
 
 
 def main():
+    from app.db import get_connection
+    get_connection()
     seed_data()
 
     print("========================================")
@@ -296,8 +308,8 @@ def main():
 
         role = EMPLOYEE_ROLE if choice == "1" else ADMIN_ROLE
         username = input("Username: ").strip()
-        password = input("Password: ").strip()
-
+        password = _read_password("Password: ")
+        reset_connection()
         user = authenticate(username, password, role)
 
         if user is None:
