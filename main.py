@@ -2,7 +2,7 @@ from getpass import getpass
 
 from app.auth import ADMIN_ROLE, EMPLOYEE_ROLE, authenticate, delete_user, disable_user, list_users, register_user
 from app.menu import add_menu_item, delete_menu_item, disable_menu_item, edit_menu_item, list_menu_items
-from app.orders import VALID_STATUSES, create_order, list_orders, sales_report, update_order_status
+from app.orders import VALID_STATUSES, create_order, export_sales_csv, list_orders, sales_report, update_order_status
 from app.db import reset_connection
 
 
@@ -23,7 +23,14 @@ def show_menu():
 
 def create_order_from_console():
     customer_name = input("Customer name: ").strip()
-    order_type = input("Order type (dine-in/takeaway): ").strip().lower()
+    if not customer_name:
+        print("Customer name cannot be empty.")
+        return
+    while True:
+        order_type = input("Order type (dine-in/takeaway): ").strip().lower()
+        if order_type in {"dine-in", "takeaway"}:
+            break
+        print("Invalid order type. Enter 'dine-in' or 'takeaway'.")
     items = []
 
     while True:
@@ -265,6 +272,14 @@ def admin_sales_report():
     else:
         print("Top items:   No data")
 
+    export = input("\nExport to CSV? (y/n): ").strip().lower()
+    if export == "y":
+        try:
+            path = export_sales_csv(from_date, to_date)
+            print(f"Exported to: {path}")
+        except Exception as e:
+            print(f"Export failed: {e}")
+
 
 def admin_dashboard():
     while True:
@@ -292,7 +307,7 @@ def admin_dashboard():
 
 
 def seed_data():
-    for username, password, role in [("admin1", "admin123", ADMIN_ROLE), ("emp1", "emp123", EMPLOYEE_ROLE)]:
+    for username, password, role in [("admin1", "admin12345", ADMIN_ROLE), ("emp1", "emp12345", EMPLOYEE_ROLE)]:
         try:
             register_user(username, password, role)
         except ValueError:
@@ -330,13 +345,21 @@ def main():
             continue
 
         role = EMPLOYEE_ROLE if choice == "1" else ADMIN_ROLE
-        username = input("Username: ").strip()
-        password = _read_password("Password: ")
-        reset_connection()
-        user = authenticate(username, password, role)
-
+        attempts = 0
+        while attempts < 3:
+            username = input("Username: ").strip()
+            password = _read_password("Password: ")
+            reset_connection()
+            user = authenticate(username, password, role)
+            if user is not None:
+                break
+            attempts += 1
+            remaining = 3 - attempts
+            if remaining > 0:
+                print(f"Invalid username, password, or role. {remaining} attempt(s) remaining.")
+            else:
+                print("Too many failed attempts. Returning to main menu.")
         if user is None:
-            print("Invalid username, password, or role.")
             continue
 
         print(f"\nLogin successful! Welcome {user['username']} ({user['role']}).")

@@ -1,3 +1,6 @@
+import csv
+import os
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from app.db import get_connection
@@ -93,7 +96,18 @@ def update_order_status(order_id: int, new_status: str) -> Optional[Dict[str, ob
     return order
 
 
+def _validate_date(date_str: str) -> None:
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        raise ValueError(f"Invalid date '{date_str}'. Use YYYY-MM-DD format.")
+
+
 def sales_report(from_date: str, to_date: str) -> Dict[str, object]:
+    _validate_date(from_date)
+    _validate_date(to_date)
+    if from_date > to_date:
+        raise ValueError("From date cannot be after to date.")
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
@@ -125,6 +139,45 @@ def sales_report(from_date: str, to_date: str) -> Dict[str, object]:
         "revenue": float(summary["revenue"]),
         "top_items": [{ "name": r["item_name"], "quantity": r["total_qty"]} for r in top_items],
     }
+
+
+def export_sales_csv(from_date: str, to_date: str) -> str:
+    _validate_date(from_date)
+    _validate_date(to_date)
+    if from_date > to_date:
+        raise ValueError("From date cannot be after to date.")
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT o.daily_number, o.customer_name, o.order_type, o.status,
+               o.total, o.created_at, oi.item_name, oi.quantity, oi.price, oi.item_total
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        WHERE o.status = 'collected' AND DATE(o.created_at) BETWEEN %s AND %s
+        ORDER BY o.created_at, o.id
+        """,
+        (from_date, to_date),
+    )
+    rows = cursor.fetchall()
+    filename = f"sales_{from_date}_to_{to_date}.csv"
+    with open(filename, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["order_id", "customer_name", "order_type", "status", "total", "created_at", "item_name", "quantity", "price", "item_total"])
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({
+                "order_id": row["daily_number"],
+                "customer_name": row["customer_name"],
+                "order_type": row["order_type"],
+                "status": row["status"],
+                "total": row["total"],
+                "created_at": row["created_at"],
+                "item_name": row["item_name"],
+                "quantity": row["quantity"],
+                "price": row["price"],
+                "item_total": row["item_total"],
+            })
+    return os.path.abspath(filename)
 
 
 def clear_orders() -> None:

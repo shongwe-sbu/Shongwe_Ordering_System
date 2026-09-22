@@ -21,8 +21,14 @@ def register_user(username: str, password: str, role: str) -> Dict[str, str]:
     username = username.strip()
     if not username:
         raise ValueError("Username cannot be empty.")
+    if len(username) < 3:
+        raise ValueError("Username must be at least 3 characters.")
+    if not username.isalnum():
+        raise ValueError("Username must contain only letters and numbers.")
     if not password:
         raise ValueError("Password cannot be empty.")
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters.")
     if role not in {EMPLOYEE_ROLE, ADMIN_ROLE}:
         raise ValueError("Invalid user role.")
 

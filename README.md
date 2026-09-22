@@ -1,18 +1,18 @@
 # Shongwe Restaurant Ordering System
 
-The Shongwe Restaurant Ordering System is a Python console application for managing in-restaurant orders. Restaurant employees will use it to record customer orders, manage the order queue, update order statuses and record sales. Administrators will manage the menu, staff access, customers, orders and reports.
+The Shongwe Restaurant Ordering System is a Python console application for managing in restaurant orders. Restaurant employees use it to record customer orders, manage the order queue and update order statuses. Administrators manage the menu, staff accounts, orders and sales reports.
 
 ## Combined Project Scope
 
-This is one combined project that covers both the **CyberSecurity** and **Cloud Computing** requirements. The restaurant ordering system will demonstrate how security controls protect users, administrators, accounts and order information, while cloud technologies provide reliable storage, access, backups and reporting for the application.
+This is one combined project that covers both the **CyberSecurity** and **Cloud Computing** requirements. The restaurant ordering system demonstrates how security controls protect users, administrators, accounts and order information, while cloud technologies provide reliable storage, access, backups and reporting for the application.
 
-The CyberSecurity focus includes authentication, role-based access control, secure password storage, input validation, protected administrator functions, secure handling of customer information and prevention of unauthorized access. The Cloud Computing focus includes using AWS Free Tier services, storing orders and customer details in a managed cloud database, enabling backups where available and making sales information available to authorized administrators.
+The CyberSecurity focus includes authentication, role-based access control, secure password storage, input validation, login attempt limiting, protected administrator functions, secure handling of customer information and prevention of unauthorized access. The Cloud Computing focus includes using AWS Free Tier services, storing orders and customer details in a managed cloud database, enabling backups and making sales information available to authorized administrators.
 
 ## Project Goals
 
 - Allow employees to securely sign in and take customer orders.
 - Allow employees to record optional customer details without requiring customers to create accounts.
-- Save customer order and payment-related information in a cloud-hosted database.
+- Save customer order information in a cloud-hosted database.
 - Allow employees to manage the current restaurant order queue.
 - Allow administrators to monitor customers and manage current and past orders.
 - Provide sales information showing what was sold and how much revenue was generated.
@@ -22,99 +22,125 @@ The CyberSecurity focus includes authentication, role-based access control, secu
 
 ### Employee Side
 
-- Log in with an authorized staff account.
+- Log in with an authorized staff account (password input is masked).
 - Record optional customer name and contact details.
 - Browse available menu items and prices.
 - Add items to an order and submit it to the restaurant queue.
-- View and update active order statuses.
+- View and update active order statuses (preparing, ready, collected, cancelled).
 
 Customers do not log in to the system. Their details are recorded by an employee when needed.
 
 ### Administrator Side
 
-- Sign in through a protected administrator.
+- Sign in through a protected administrator account.
 - Create and manage employee accounts and permissions.
-- Add, edit, disable, and remove menu items.
-- View customer details and customer order history.
-- View active, completed and cancelled orders.
-- Review sales totals, popular menu items and revenue over selected dates.
-- Export sales data for further analysis.
+- Add, edit, disable and remove menu items.
+- View all active, completed and cancelled orders.
+- Review sales totals, popular menu items and revenue over a selected date range.
+- Export sales data to a CSV file for further analysis.
 
-## Planned Architecture
+## Architecture
 
 ```text
 Employee or Administrator
-		|
-	    v
-	 Python Console Application
-			|
-			v
-		  Python Backend Logic
-	/       |       \
- Authentication Orders  Reports
-		|
-		v
-	    Amazon RDS MySQL Database
+        |
+        v
+ Python Console Application (main.py)
+        |
+        v
+  Python Backend Logic
+ /      |        \
+Auth   Menu    Orders & Reports
+        |
+        v
+  Amazon RDS MySQL Database
 ```
 
-The first version is planned around:
-
-	- **Application:** Python console application.
-	- **Database:** MySQL hosted on Amazon RDS using the AWS Free Tier.
-	- **Interface:** Text-based menus for customer and administrator workflows.
-	- **Authentication:** Secure Python authentication with customer and administrator roles.
-	- **Cloud provider:** Amazon Web Services (AWS).
-
-	The system can later be extended with a web interface beyond the initial console application.
+- **Application:** Python console application.
+- **Database:** MySQL hosted on Amazon RDS using the AWS Free Tier.
+- **Interface:** Text-based menus for employee and administrator workflows.
+- **Authentication:** bcrypt password hashing, role-based access control (admin/employee).
+- **Cloud provider:** Amazon Web Services (AWS).
+- **AWS documentation:** See `AWS_SETUP.md` for full RDS setup, SSL, security groups and environment variable configuration.
 
 ## Core Data
 
-The database is expected to contain the following main records:
+The database contains the following main records:
 
-- **Staff users:** Login details, contact information, and account role.
+- **Staff users:** Login details, contact information and account role.
 - **Customers:** Optional name and contact details captured by employees.
 - **Menu items:** Names, descriptions, categories, prices and availability.
-- **Orders:** Customer, order type, table number where applicable, total amount, status, payment status and order date.
+- **Orders:** Customer, order type, table number where applicable, daily order number, total amount, status and order date.
 - **Order items:** Menu item, quantity and the price at the time of ordering.
-- **Payments:** Payment provider reference, amount, status and payment date.
 
-Order item prices will be stored when an order is placed. This ensures that historical orders remain correct if the restaurant changes its menu prices later.
+Order item prices are stored when an order is placed. This ensures that historical orders remain correct if the restaurant changes its menu prices later.
+
+Payments are handled in person at the store and are not recorded by this application.
 
 ## Order Process
 
-1. An employee signs in with an authorized staff account.
+1. An employee signs in with an authorized staff account (login is limited to 3 attempts).
 2. The employee records optional customer details and selects the order type: dine-in or takeaway.
 3. The employee selects menu items and adds them to the order.
 4. The system validates the items, quantities, prices and order total.
 5. The order and its items are saved in the cloud database and added to the restaurant queue.
-6. Employees update the order status as it is prepared and handed to the customer.
-7. Completed and paid orders are included in sales reports.
+6. Each order is assigned a daily order number that resets to 1 at the start of each day.
+7. Employees update the order status as it is prepared and handed to the customer.
+8. Collected orders are included in sales reports.
 
-## Security Expectations
+## Order Numbering
 
-- Passwords must be securely hashed and never stored as plain text.
-- Employee and administrator permissions must be separated.
-- Staff users must only access the functions allowed by their role.
-- Order totals must be calculated and validated on the server.
-- Payment card details must not be stored by this application.
-- Secrets and database credentials must be stored in environment variables.
-- Database credentials must be stored securely and not hard-coded in the application.
-- AWS database access must be restricted to authorized users and services.
-- Cloud database backups and application error logging should be enabled where available.
+Orders use a daily order number as the user-facing ID. This resets to 1 at the start of each day, making it easy for staff to reference orders during a shift. The internal database ID auto-increments and is used for database integrity and foreign key relationships.
 
-## Planned Development Phases
+## Sales Reports
+
+Administrators can generate a sales report for any date range. The report shows:
+
+- Total revenue from collected orders.
+- Total number of collected orders.
+- Top 5 menu items by quantity sold.
+
+After viewing a report, the administrator is prompted to export the data to a CSV file named `sales_YYYY-MM-DD_to_YYYY-MM-DD.csv`.
+
+## Security Controls
+
+- Passwords are hashed with bcrypt and never stored as plain text.
+- Password input is masked using `getpass` (requires a real CMD window — not the VS Code integrated terminal).
+- Login is limited to 3 attempts before access is denied.
+- Usernames must be alphanumeric and at least 3 characters long.
+- Passwords must be at least 8 characters long.
+- Employee and administrator permissions are separated by role.
+- Staff users can only access the functions allowed by their role.
+- Order totals are calculated and validated server-side.
+- Payment card details are not stored by this application.
+- Database credentials are stored in environment variables and never hard-coded.
+- AWS database access is restricted via security group rules.
+- SSL is enforced for all database connections.
+- Cloud database backups are enabled on the RDS instance.
+
+## Development Phases Completed
 
 1. Set up the Python console application.
-2. Configure a local MySQL database for development.
-3. Create and configure an AWS RDS MySQL database using the AWS Free Tier.
-4. Implement administrator-managed staff accounts, login and user roles.
-5. Implement menu and category management.
-6. Implement the shopping cart and order creation process.
-7. Implement order status updates and customer order history.
-8. Build the administrator console.
-9. Add sales reports and data export.
-10. Add payment recording for cash or card payments if required.
-11. Add automated tests, security checks, backups and AWS configuration documentation.
+2. Configured a local MySQL database for development.
+3. Created and configured an AWS RDS MySQL database using the AWS Free Tier.
+4. Implemented administrator-managed staff accounts, login and user roles.
+5. Implemented menu and category management.
+6. Implemented the shopping cart and order creation process.
+7. Implemented order status updates and daily order numbering.
+8. Built the administrator console.
+9. Added sales reports and CSV data export.
+10. Added input validation and login attempt limiting.
+11. Added automated tests, security checks, backups and AWS configuration documentation.
+
+## Testing
+
+The project includes 16 automated tests across three test files:
+
+- `tests/test_auth.py` — 5 tests covering registration, authentication, listing, disabling and deleting users.
+- `tests/test_menu.py` — 4 tests covering adding, editing, disabling and deleting menu items.
+- `tests/test_orders.py` — 6 tests covering order creation, status updates, daily numbering, sales reports and CSV export.
+
+Tests run against an isolated `shongwe_ordering_test` database. The production database is never touched by tests. Each test file sets `TEST_MODE=1` before any imports to ensure test isolation.
 
 ## Project Verification Codes
 

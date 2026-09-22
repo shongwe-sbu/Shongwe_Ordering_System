@@ -3,7 +3,7 @@ import unittest
 
 os.environ["TEST_MODE"] = "1"
 
-from app.orders import clear_orders, create_order, list_orders, sales_report, update_order_status
+from app.orders import clear_orders, create_order, export_sales_csv, list_orders, sales_report, update_order_status
 
 
 class OrderTests(unittest.TestCase):
@@ -55,6 +55,17 @@ class OrderTests(unittest.TestCase):
         self.assertEqual(report["revenue"], 70.0)
         self.assertEqual(report["top_items"][0]["name"], "Burger")
         self.assertEqual(report["top_items"][0]["quantity"], 2)
+
+    def test_export_sales_csv_creates_file(self):
+        import os
+        from datetime import date
+        order = create_order("Grace", "takeaway", [{"name": "Fries", "quantity": 2, "price": 18.5}])
+        update_order_status(order["order_id"], "ready")
+        update_order_status(order["order_id"], "collected")
+        today = date.today().isoformat()
+        path = export_sales_csv(today, today)
+        self.assertTrue(os.path.exists(path))
+        os.remove(path)
 
 
 if __name__ == "__main__":
